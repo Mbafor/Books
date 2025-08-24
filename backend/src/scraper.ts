@@ -24,8 +24,7 @@ export async function scrapeBooksToScrape(
       "--no-zygote",
       "--single-process"
     ],
-     executablePath:
-      process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // ensures correct binary
+     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || (await puppeteer.executablePath()),
   });
 
   const page = await browser.newPage();
