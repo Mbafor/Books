@@ -23,7 +23,9 @@ export async function scrapeBooksToScrape(
       "--disable-gpu",
       "--no-zygote",
       "--single-process"
-    ]
+    ],
+     executablePath:
+      process.env.PUPPETEER_EXECUTABLE_PATH || puppeteer.executablePath(), // ensures correct binary
   });
 
   const page = await browser.newPage();
