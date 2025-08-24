@@ -5,7 +5,7 @@ import BookGrid from "./components/BookGrid";
 import { useDebounce } from "./hooks/useDebounce";
 import "./App.css";
 
-const API_BASE = "http://localhost:5000/api/books";
+const API_BASE = "https://books-302a.onrender.com";
 
 function App() {
   // --- State Management ---
