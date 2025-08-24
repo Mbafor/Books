@@ -1,6 +1,9 @@
 import React from "react";
 import { Book } from "../types/books";
 
+// Define a React functional component `BookCard`
+// It receives a single prop `book` of type `Book`
+
 const BookCard: React.FC<{ book: Book }> = ({ book }) => {
   return (
     <div className="book-card">
@@ -19,4 +22,5 @@ const BookCard: React.FC<{ book: Book }> = ({ book }) => {
   );
 };
 
+// Export component for use in other parts of the app
 export default BookCard;

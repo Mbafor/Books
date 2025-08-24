@@ -4,14 +4,19 @@ import { Book } from "../types/book.js";
 
 const router = Router();
 
-// In-memory storage for scraped books
+// Temporary in-memory storage (resets when server restarts)
 let books: Book[] = [];
 
 /**
  * GET /api/books
- * Optional query params:
- * - page (default 1)
- * - limit (default 10)
+ * 
+ * Returns paginated books from in-memory storage.
+ * 
+ * Query Parameters:
+ * - page  (default: 1) → Which page of results
+ * - limit (default: 10) → Number of books per page
+ * 
+ * Example: /api/books?page=2&limit=5
  */
 router.get("/", (req, res) => {
   const page = parseInt(req.query.page as string) || 1;
@@ -34,11 +39,18 @@ router.get("/", (req, res) => {
 
 /**
  * GET /api/books/scrape?limit=50
- * Scrape books from the website (fresh data)
+ * 
+ * Triggers a fresh scrape from "Books to Scrape".
+ * - Default limit is 50 books (can be overridden with ?limit=N)
+ * - Updates in-memory `books` with the newly scraped results
+ * 
+ * Example: /api/books/scrape?limit=20
  */
 router.get("/scrape", async (req, res) => {
   try {
     const limit = Number(req.query.limit ?? 50);
+
+    // Run the scraper and overwrite the in-memory dataset
     const fresh = await scrapeBooksToScrape(limit);
     books = fresh;
 
@@ -49,6 +61,7 @@ router.get("/scrape", async (req, res) => {
       data: books,
     });
   } catch (error) {
+    // Return structured error response
     res.status(500).json({
       success: false,
       error: (error as Error).message,

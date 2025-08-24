@@ -8,16 +8,19 @@ import "./App.css";
 const API_BASE = "http://localhost:5000/api/books";
 
 function App() {
-  const [books, setBooks] = useState<Book[]>([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [limit] = useState(10); // items per page
+  // --- State Management ---
+  const [books, setBooks] = useState<Book[]>([]);        // currently displayed books
+  const [search, setSearch] = useState("");              // search query input
+  const [loading, setLoading] = useState(false);         // loading indicator
+  const [error, setError] = useState<string | null>(null); // error state
+  const [page, setPage] = useState(1);                   // current page for pagination
+  const [totalPages, setTotalPages] = useState(1);       // total available pages
+  const [limit] = useState(10);                          // items per page (fixed)
 
+  // Debounce search input to reduce re-renders & API calls
   const debounced = useDebounce(search, 300);
 
+  // Filter books client-side by title/author (applies after API results)
   const filtered = useMemo(() => {
     const q = debounced.trim().toLowerCase();
     if (!q) return books;
@@ -28,6 +31,9 @@ function App() {
     );
   }, [books, debounced]);
 
+  /**
+   * Fetch books from backend API (paginated)
+   */
   const loadBooks = async (pageNumber: number = 1) => {
     setLoading(true);
     setError(null);
@@ -35,6 +41,8 @@ function App() {
       const res = await fetch(`${API_BASE}?page=${pageNumber}&limit=${limit}`);
       const data: BookApiResponse = await res.json();
       if (!data.success) throw new Error(data.error || "Failed to load");
+
+      // Update state with new page data
       setBooks(data.data);
       setPage(data.page);
       setTotalPages(data.totalPages);
@@ -45,6 +53,10 @@ function App() {
     }
   };
 
+  /**
+   * Refresh books by re-scraping data from source website
+   * (Triggers backend scraper endpoint)
+   */
   const refreshBooks = async () => {
     setLoading(true);
     setError(null);
@@ -52,6 +64,8 @@ function App() {
       const res = await fetch(`${API_BASE}/scrape?limit=60`);
       const data: ScrapeApiResponse = await res.json();
       if (!data.success) throw new Error(data.error || "Failed to scrape");
+
+      // Reset to page 1 with freshly scraped data
       setBooks(data.data ?? []);
       setPage(1);
       setTotalPages(Math.ceil((data.data?.length ?? 0) / limit));
@@ -62,10 +76,12 @@ function App() {
     }
   };
 
+  // Fetch books when component mounts or page changes
   useEffect(() => {
     loadBooks(page);
   }, [page]);
 
+  // --- Pagination handlers ---
   const handlePrev = () => {
     if (page > 1) setPage(page - 1);
   };
@@ -74,6 +90,7 @@ function App() {
     if (page < totalPages) setPage(page + 1);
   };
 
+  // --- UI Render ---
   return (
     <div className="app-container">
       <header>
@@ -100,23 +117,24 @@ function App() {
           <>
             <BookGrid books={filtered} />
             <div className="pagination">
-  <button 
-    onClick={handlePrev} 
-    disabled={page <= 1} 
-    className="pagination-btn"
-  >
-    ⬅ Prev
-  </button>
-  <span>
-    Page {page} of {totalPages}
-  </span>
-  <button 
-    onClick={handleNext} 
-    disabled={page >= totalPages} 
-    className="pagination-btn"
-  > Next ➡
-  </button>
-</div>
+              <button 
+                onClick={handlePrev} 
+                disabled={page <= 1} 
+                className="pagination-btn"
+              >
+                ⬅ Prev
+              </button>
+              <span>
+                Page {page} of {totalPages}
+              </span>
+              <button 
+                onClick={handleNext} 
+                disabled={page >= totalPages} 
+                className="pagination-btn"
+              > 
+                Next ➡
+              </button>
+            </div>
           </>
         )}
       </main>
