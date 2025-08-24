@@ -1,4 +1,5 @@
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import { Book } from "./types/book.js";
 
 const BASE = "http://books.toscrape.com";
@@ -13,19 +14,14 @@ export async function scrapeBooksToScrape(
   limit: number = 50,
   pageToFetch?: number
 ): Promise<Book[]> {
-  // Use Render-friendly Puppeteer launch options
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-      "--disable-gpu",
-      "--no-zygote",
-      "--single-process"
-    ],
-     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || (await puppeteer.executablePath()),
-  });
+  // Launch using puppeteer-core + @sparticuz/chromium (Render/Vercel friendly)
+const browser = await puppeteer.launch({
+  args: chromium.args,
+  defaultViewport: null, // 👈 instead of chromium.defaultViewport
+  executablePath: await chromium.executablePath(), // dynamic path
+  headless: true // 👈 set explicitly instead of chromium.headless
+});
+
 
   const page = await browser.newPage();
 
@@ -57,11 +53,8 @@ export async function scrapeBooksToScrape(
           const availability =
             el.querySelector(".instock.availability")?.textContent?.replace(/\s+/g, " ").trim() ||
             "";
-          const rating = el.classList.contains("star-rating")
-            ? Array.from(el.classList).find((c) =>
-                ["One", "Two", "Three", "Four", "Five"].includes(c)
-              )
-            : el.querySelector(".star-rating")?.classList[1] || "";
+          const rating =
+            el.querySelector(".star-rating")?.classList[1] || "";
           const imgSrc = el.querySelector("img")?.getAttribute("src") || "";
 
           return {
@@ -71,8 +64,8 @@ export async function scrapeBooksToScrape(
             availability,
             rating,
             image: imgSrc,
-            year: "Unknown",
-            genres: ["General"]
+            year: "Unknown", // placeholder since BooksToScrape doesn’t provide year
+            genres: ["General"], // placeholder since no categories are exposed
           };
         })
       );
@@ -89,12 +82,12 @@ export async function scrapeBooksToScrape(
         results.push({
           id: slug,
           title: it.title,
-          author: "Unknown",
+          author: "Unknown", // BooksToScrape doesn’t expose author
           link: linkAbs,
           price: it.price,
           availability: it.availability,
           rating: it.rating,
-          image: imgAbs
+          image: imgAbs,
         });
 
         if (results.length >= limit) break;
